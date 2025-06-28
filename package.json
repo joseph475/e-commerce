@@ -1,0 +1,35 @@
+{
+  "name": "e-commerce-project",
+  "version": "1.0.0",
+  "description": "E-commerce project with frontend and backend",
+  "private": true,
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "scripts": {
+    "install:all": "npm install && cd fe && npm install && cd ../be && npm install",
+    "dev": "concurrently \"npm run dev:be\" \"npm run dev:fe\"",
+    "dev:fe": "cd fe && npm run dev",
+    "dev:be": "cd be && npm run dev",
+    "start": "concurrently \"npm run start:be\" \"npm run start:fe\"",
+    "start:fe": "cd fe && npm start",
+    "start:be": "cd be && npm start",
+    "build": "cd fe && npm run build",
+    "clean": "cd fe && npm run clean",
+    "test": "echo \"Run tests for both fe and be\"",
+    "lint": "echo \"Run linting for both fe and be\""
+  },
+  "keywords": [
+    "e-commerce",
+    "fullstack",
+    "preact",
+    "express",
+    "supabase"
+  ],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
