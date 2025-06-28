@@ -3,9 +3,13 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const WebSocket = require('ws');
 const http = require('http');
+const { WS_MESSAGE_TYPES } = require('shared');
 
-// Load environment variables
-dotenv.config();
+// Load environment variables - hybrid approach
+// 1. Load root .env first (shared variables)
+dotenv.config({ path: '../../.env' });
+// 2. Load package-specific .env (overrides root .env if exists)
+dotenv.config({ path: './.env' });
 
 const app = express();
 const server = http.createServer(app);
@@ -15,7 +19,7 @@ const wss = new WebSocket.Server({ server });
 
 // Middleware
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: process.env.FRONTEND_URL,
   credentials: true
 }));
 
@@ -47,7 +51,7 @@ wss.on('connection', (ws) => {
     
     // Echo the message back
     ws.send(JSON.stringify({
-      type: 'echo',
+      type: WS_MESSAGE_TYPES.ECHO,
       message: message.toString(),
       timestamp: new Date().toISOString()
     }));
@@ -59,7 +63,7 @@ wss.on('connection', (ws) => {
 
   // Send welcome message
   ws.send(JSON.stringify({
-    type: 'welcome',
+    type: WS_MESSAGE_TYPES.WELCOME,
     message: 'Connected to WebSocket server',
     timestamp: new Date().toISOString()
   }));
@@ -82,12 +86,19 @@ app.use('*', (req, res) => {
   });
 });
 
-const PORT = process.env.PORT || 8000;
+const PORT = process.env.BACKEND_PORT || process.env.PORT;
+
+if (!PORT) {
+  console.error('❌ ERROR: No port specified in environment variables!');
+  console.error('Please set BACKEND_PORT or PORT in your .env file');
+  process.exit(1);
+}
 
 server.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📡 WebSocket server running on port ${PORT}`);
   console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`📁 Using BACKEND_PORT from .env: ${process.env.BACKEND_PORT}`);
 });
 
 module.exports = app;

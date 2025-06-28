@@ -1,7 +1,7 @@
 {
-  "name": "boilerplate-be",
+  "name": "backend",
   "version": "1.0.0",
-  "description": "Backend API Boilerplate",
+  "description": "Backend API for Full-stack Boilerplate",
   "main": "server.js",
   "engines": {
     "node": "18.x"
@@ -28,6 +28,7 @@
     "dotenv": "^16.0.3",
     "express": "^4.18.2",
     "jsonwebtoken": "^9.0.0",
+    "shared": "1.0.0",
     "ws": "^8.18.2"
   },
   "devDependencies": {
