@@ -1,35 +1,44 @@
 {
-  "name": "e-commerce-project",
+  "name": "pos-project",
   "version": "1.0.0",
-  "description": "E-commerce project with frontend and backend",
+  "description": "POS (Point of Sale) system with Node.js, Express, Supabase, Preact, and Tailwind CSS",
   "private": true,
-  "engines": {
-    "node": ">=18.0.0",
-    "npm": ">=8.0.0"
-  },
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
-    "install:all": "npm install && cd fe && npm install && cd ../be && npm install",
-    "dev": "concurrently \"npm run dev:be\" \"npm run dev:fe\"",
-    "dev:fe": "cd fe && npm run dev",
-    "dev:be": "cd be && npm run dev",
-    "start": "concurrently \"npm run start:be\" \"npm run start:fe\"",
-    "start:fe": "cd fe && npm start",
-    "start:be": "cd be && npm start",
-    "build": "cd fe && npm run build",
-    "clean": "cd fe && npm run clean",
-    "test": "echo \"Run tests for both fe and be\"",
-    "lint": "echo \"Run linting for both fe and be\""
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "npm run dev --workspace=pos-backend",
+    "dev:frontend": "npm run dev --workspace=pos-frontend",
+    "build": "npm run build --workspace=pos-frontend",
+    "build:frontend": "npm run build --workspace=pos-frontend",
+    "start": "concurrently \"npm run start:backend\" \"npm run start:frontend\"",
+    "start:backend": "npm run start --workspace=pos-backend",
+    "start:frontend": "npm run start --workspace=pos-frontend",
+    "install:all": "npm install && npm install --workspace=pos-backend && npm install --workspace=pos-frontend",
+    "clean": "npm run clean --workspace=pos-frontend",
+    "test": "npm run test --workspace=pos-backend && npm run test --workspace=pos-frontend",
+    "lint": "npm run lint --workspace=pos-backend && npm run lint --workspace=pos-frontend"
   },
   "keywords": [
-    "e-commerce",
+    "pos",
+    "point-of-sale",
+    "retail",
     "fullstack",
-    "preact",
+    "nodejs",
     "express",
-    "supabase"
+    "supabase",
+    "preact",
+    "webpack",
+    "tailwindcss"
   ],
   "author": "",
   "license": "ISC",
   "devDependencies": {
     "concurrently": "^8.2.2"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
   }
 }

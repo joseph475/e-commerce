@@ -3,7 +3,7 @@ node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-package-lock.json
+lerna-debug.log*
 
 # Runtime data
 pids
@@ -60,13 +60,14 @@ typings/
 # Yarn Integrity file
 .yarn-integrity
 
-# dotenv environment variables file
+# Environment variables
 .env
-.env.test
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
+.env.development
+.env.production
 
 # parcel-bundler cache (https://parceljs.org/)
 .cache
@@ -153,15 +154,39 @@ web_modules/
 # Yarn Integrity file
 .yarn-integrity
 
+# dotenv environment variable files
+.env.development.local
+.env.test.local
+.env.production.local
+.env.local
+
 # parcel-bundler cache (https://parceljs.org/)
 .cache
 .parcel-cache
 
-# Vite build tool cache
-.vite
+# Next.js build output
+.next
+out
 
-# Rollup cache
-.rollup.cache
+# Nuxt.js build / generate output
+.nuxt
+dist
+
+# Gatsby files
+.cache/
+# Comment in the public line in if your project uses Gatsby and not Next.js
+# https://nextjs.org/blog/next-9-1#public-directory-support
+# public
+
+# vuepress build output
+.vuepress/dist
+
+# vuepress v2.x temp and cache directory
+.temp
+.cache
+
+# Docusaurus cache and generated files
+.docusaurus
 
 # Serverless directories
 .serverless/
@@ -185,44 +210,50 @@ web_modules/
 .yarn/install-state.gz
 .pnp.*
 
-# MacOS
-.DS_Store
-.AppleDouble
-.LSOverride
+# Frontend specific
+packages/frontend/dist/
+packages/frontend/build/
+packages/frontend/.cache/
 
-# Windows
-Thumbs.db
-ehthumbs.db
-Desktop.ini
+# Backend specific
+packages/backend/uploads/
+packages/backend/logs/
 
-# Linux
-*~
-
-# IDE
+# IDE and Editor files
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
 
-# Build outputs
-dist/
-build/
-out/
-
-# Webpack
-.webpack/
-
-# Database
-*.sqlite
-*.db
-
-# Certificates
-*.pem
-*.key
-*.crt
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
 
 # Backup files
 *.bak
 *.backup
 *.old
+
+# Test files
+test-results/
+coverage/
+
+# Build artifacts
+*.map
+*.min.js
+*.min.css
+
+# Package manager lock files (choose one)
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
+
+# Local development
+.local
+.tmp

@@ -1,0 +1,21 @@
+{
+  "name": "pos-shared",
+  "version": "1.0.0",
+  "description": "Shared utilities and types for POS (Point of Sale) system",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "pos",
+    "point-of-sale",
+    "shared",
+    "utilities",
+    "types",
+    "constants"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {},
+  "devDependencies": {}
+}
