@@ -1,4 +1,5 @@
 services:
+  # Backend API Service
   - type: web
     name: pos-backend
     env: node
@@ -11,8 +12,9 @@ services:
       - key: PORT
         sync: false
     
+  # Frontend Option A: Static Site (Recommended)
   - type: web
-    name: pos-frontend
+    name: pos-frontend-static
     env: static
     buildCommand: cd packages/frontend && npm install && npm run build
     staticPublishPath: packages/frontend/dist
@@ -20,3 +22,16 @@ services:
       - type: rewrite
         source: /*
         destination: /index.html
+  
+  # Frontend Option B: Web Service (Alternative - comment out Option A if using this)
+  # - type: web
+  #   name: pos-frontend-web
+  #   env: node
+  #   plan: starter
+  #   buildCommand: cd packages/frontend && npm install && npm run build
+  #   startCommand: cd packages/frontend && npm start
+  #   envVars:
+  #     - key: NODE_ENV
+  #       value: production
+  #     - key: PORT
+  #       sync: false

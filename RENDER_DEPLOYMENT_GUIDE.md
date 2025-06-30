@@ -21,7 +21,32 @@ This guide will walk you through deploying your POS (Point of Sale) project on R
 
 You'll need to deploy **two separate services** on Render:
 1. **Web Service** for the backend API
-2. **Static Site** for the frontend application
+2. **Frontend**: You have two options:
+   - **Static Site** (Recommended)
+   - **Web Service** (Alternative)
+
+### Frontend Deployment Options
+
+**Option A: Static Site (Recommended)**
+- **Pros**: 
+  - Faster loading (served from CDN)
+  - Lower cost (free tier available)
+  - Better performance and caching
+  - Automatic SSL
+  - No server maintenance needed
+- **Cons**: 
+  - Build-time environment variables only
+  - No server-side rendering
+
+**Option B: Web Service**
+- **Pros**: 
+  - Runtime environment variables
+  - More control over server configuration
+  - Can handle server-side logic if needed
+- **Cons**: 
+  - Higher cost ($7/month minimum)
+  - Slower than CDN-served static files
+  - Requires server maintenance
 
 ## Step 1: Prepare Your Repository
 
@@ -128,7 +153,11 @@ RATE_LIMIT_MAX_REQUESTS=100
 
 ## Step 3: Deploy the Frontend
 
-### 3.1 Create a Static Site
+Choose one of the following deployment methods:
+
+### Option A: Deploy as Static Site (Recommended)
+
+#### 3A.1 Create a Static Site
 
 1. In Render dashboard, click "New +" → "Static Site"
 2. Connect your GitHub repository
@@ -140,10 +169,14 @@ RATE_LIMIT_MAX_REQUESTS=100
 - **Root Directory**: `packages/frontend`
 
 **Build Settings:**
-- **Build Command**: `npm install && npm run build`
+- **Build Command**: `npm install && npm run build:render`
 - **Publish Directory**: `dist`
 
-### 3.2 Configure Frontend Environment Variables
+**Alternative Build Commands (if rimraf issues occur):**
+- `npm install && npm run build:render` (recommended for Render)
+- `npm install && webpack --mode production` (direct webpack build)
+
+#### 3A.2 Configure Frontend Environment Variables
 
 Add these environment variables for the frontend build:
 
@@ -160,7 +193,7 @@ REACT_APP_ENABLE_ANALYTICS=true
 REACT_APP_THEME=light
 ```
 
-### 3.3 Configure Redirects for SPA
+#### 3A.3 Configure Redirects for SPA
 
 Since this is a Single Page Application, you need to configure redirects. Create a `_redirects` file in your `packages/frontend/src` directory:
 
@@ -180,11 +213,56 @@ new CopyWebpackPlugin({
 })
 ```
 
-### 3.4 Deploy the Frontend
+#### 3A.4 Deploy the Static Site
 
 1. Click "Create Static Site"
 2. Wait for the build and deployment to complete
 3. Note your frontend URL (e.g., `https://pos-frontend-xyz.onrender.com`)
+
+### Option B: Deploy as Web Service (Alternative)
+
+#### 3B.1 Create a Web Service for Frontend
+
+1. In Render dashboard, click "New +" → "Web Service"
+2. Connect your GitHub repository
+3. Configure the service:
+
+**Basic Settings:**
+- **Name**: `pos-frontend` (or your preferred name)
+- **Environment**: `Node`
+- **Region**: Choose closest to your users
+- **Branch**: `main`
+- **Root Directory**: `packages/frontend`
+
+**Build & Deploy Settings:**
+- **Build Command**: `npm install && npm run build`
+- **Start Command**: `npm start`
+
+#### 3B.2 Configure Frontend Environment Variables
+
+Add these environment variables:
+
+```
+NODE_ENV=production
+PORT=10000
+REACT_APP_API_URL=https://your-backend-service.onrender.com
+REACT_APP_WS_URL=wss://your-backend-service.onrender.com
+REACT_APP_SUPABASE_URL=your_supabase_project_url
+REACT_APP_SUPABASE_ANON_KEY=your_supabase_anon_key
+REACT_APP_CURRENCY_SYMBOL=₱
+REACT_APP_CURRENCY_CODE=PHP
+REACT_APP_ENABLE_DEBUG=false
+REACT_APP_ENABLE_ANALYTICS=true
+REACT_APP_THEME=light
+```
+
+#### 3B.3 Deploy the Web Service
+
+1. Click "Create Web Service"
+2. Wait for the deployment to complete
+3. Note your frontend URL (e.g., `https://pos-frontend-xyz.onrender.com`)
+
+**Note**: Your frontend already has a `server.js` file that serves the built files, so this option works out of the box.
 
 ## Step 4: Update CORS Configuration
 
@@ -268,6 +346,13 @@ Render automatically provides SSL certificates for all services. Additional secu
 - Check that all dependencies are listed in `package.json`
 - Verify Node.js version compatibility (your project requires Node 18+)
 - Check build logs for specific error messages
+
+**Rimraf Not Found Error:**
+If you encounter `sh: 1: rimraf: not found` during build:
+- **Solution 1**: Use the `build:render` script instead of `build` in your build command
+- **Solution 2**: Move `rimraf` from `devDependencies` to `dependencies` in `package.json`
+- **Solution 3**: Use direct webpack build: `npm install && webpack --mode production`
+- **Root Cause**: Render doesn't install devDependencies in production builds by default
 
 **Environment Variables:**
 - Ensure all required environment variables are set
