@@ -1,5 +1,6 @@
 import { h } from 'preact';
 import { useState } from 'preact/hooks';
+import { route } from 'preact-router';
 import ResponsiveLayout from './ResponsiveLayout';
 import { useSidebar } from './AppLayout';
 import { useAuth } from '../../contexts/AuthContext';
@@ -22,11 +23,11 @@ const NavigationItem = ({ icon, label, href, active = false, onClick, mobile = f
   const classes = `${baseClasses} ${active ? activeClasses : inactiveClasses} transition-colors duration-200`;
 
   const handleClick = (e) => {
+    e.preventDefault();
     if (onClick) {
-      e.preventDefault();
       onClick();
     } else if (href) {
-      window.location.href = href;
+      route(href); // Use client-side routing instead of page reload
     }
   };
 

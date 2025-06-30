@@ -75,6 +75,11 @@ module.exports = (env, argv) => {
               ignore: ['**/index.html']
             },
             noErrorOnMissing: true
+          },
+          {
+            from: 'src/_redirects',
+            to: '_redirects',
+            noErrorOnMissing: true
           }
         ]
       }),

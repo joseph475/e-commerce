@@ -18,7 +18,10 @@
     "install:all": "npm install && npm install --workspace=pos-backend && npm install --workspace=pos-frontend",
     "clean": "npm run clean --workspace=pos-frontend",
     "test": "npm run test --workspace=pos-backend && npm run test --workspace=pos-frontend",
-    "lint": "npm run lint --workspace=pos-backend && npm run lint --workspace=pos-frontend"
+    "lint": "npm run lint --workspace=pos-backend && npm run lint --workspace=pos-frontend",
+    "render:backend": "cd packages/backend && npm install && npm start",
+    "render:frontend": "cd packages/frontend && npm install && npm run build",
+    "render:frontend:start": "cd packages/frontend && npm start"
   },
   "keywords": [
     "pos",

@@ -12,6 +12,7 @@ import Card from '../components/ui/Card';
 import Modal from '../components/ui/Modal';
 import Toast from '../components/ui/Toast';
 import { formatCurrency } from '../utils/currency';
+import { useCache } from '../hooks/useCache';
 import { useData } from '../contexts/DataContext';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -336,7 +337,8 @@ const DesktopPOSLayout = ({
 };
 
 const POSPage = () => {
-  const { products, categories, loading, fetchProducts, fetchCategories, createOrder } = useData();
+  const { products, categories, loading } = useCache();
+  const { createOrder } = useData();
   const { user } = useAuth();
   const [cart, setCart] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -348,15 +350,6 @@ const POSPage = () => {
   const [qrOrderData, setQrOrderData] = useState(null);
   const [lastOrder, setLastOrder] = useState(null);
   const [toast, setToast] = useState({ isOpen: false, message: '', type: 'success' });
-
-  useEffect(() => {
-    const loadData = async () => {
-      await fetchProducts();
-      await fetchCategories();
-    };
-    
-    loadData();
-  }, []);
 
   // Get unique categories (case-insensitive)
   const uniqueCategories = [...new Set(

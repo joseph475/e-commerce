@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: pos-backend
+    env: node
+    plan: starter
+    buildCommand: cd packages/backend && npm install
+    startCommand: cd packages/backend && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        sync: false
+    
+  - type: web
+    name: pos-frontend
+    env: static
+    buildCommand: cd packages/frontend && npm install && npm run build
+    staticPublishPath: packages/frontend/dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html

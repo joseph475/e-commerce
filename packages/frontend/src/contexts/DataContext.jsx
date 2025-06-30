@@ -1,6 +1,7 @@
 import { h, createContext } from 'preact';
 import { useState, useEffect, useContext } from 'preact/hooks';
 import { useAuth } from './AuthContext';
+import globalCache from '../utils/globalCache';
 
 const DataContext = createContext();
 
@@ -14,125 +15,10 @@ export const useData = () => {
 
 export const DataProvider = ({ children }) => {
   const { token } = useAuth();
-  const [products, setProducts] = useState([]);
-  const [orders, setOrders] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [loading, setLoading] = useState({
-    products: false,
-    orders: false,
-    categories: false
-  });
-  const [lastFetch, setLastFetch] = useState({
-    products: null,
-    orders: null,
-    categories: null
-  });
 
-  // Cache duration in milliseconds (5 minutes)
-  const CACHE_DURATION = 5 * 60 * 1000;
-
-  const shouldRefetch = (key) => {
-    const lastFetchTime = lastFetch[key];
-    if (!lastFetchTime) return true;
-    return Date.now() - lastFetchTime > CACHE_DURATION;
-  };
-
-  const setLoadingState = (key, value) => {
-    setLoading(prev => ({ ...prev, [key]: value }));
-  };
-
-  const setLastFetchTime = (key) => {
-    setLastFetch(prev => ({ ...prev, [key]: Date.now() }));
-  };
-
-  const fetchProducts = async (force = false) => {
-    if (!force && !shouldRefetch('products') && products.length > 0) {
-      return products;
-    }
-
-    try {
-      setLoadingState('products', true);
-      
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/products`);
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to fetch products');
-      }
-
-      setProducts(result.data || []);
-      setLastFetchTime('products');
-      
-      return result.data || [];
-    } catch (error) {
-      console.error('Error fetching products:', error);
-      return [];
-    } finally {
-      setLoadingState('products', false);
-    }
-  };
-
-  const fetchCategories = async (force = false) => {
-    if (!force && !shouldRefetch('categories') && categories.length > 0) {
-      return categories;
-    }
-
-    try {
-      setLoadingState('categories', true);
-      
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/products/categories/list`);
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to fetch categories');
-      }
-
-      setCategories(result.data || []);
-      setLastFetchTime('categories');
-      
-      return result.data || [];
-    } catch (error) {
-      console.error('Error fetching categories:', error);
-      return [];
-    } finally {
-      setLoadingState('categories', false);
-    }
-  };
-
-  const fetchOrders = async (force = false, filters = {}) => {
-    if (!force && !shouldRefetch('orders') && orders.length > 0 && Object.keys(filters).length === 0) {
-      return orders;
-    }
-
-    try {
-      setLoadingState('orders', true);
-      
-      const queryParams = new URLSearchParams();
-      if (filters.status) queryParams.append('status', filters.status);
-      if (filters.date_from) queryParams.append('date_from', filters.date_from);
-      if (filters.date_to) queryParams.append('date_to', filters.date_to);
-      if (filters.limit) queryParams.append('limit', filters.limit);
-
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/orders?${queryParams}`);
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to fetch orders');
-      }
-
-      if (Object.keys(filters).length === 0) {
-        setOrders(result.data || []);
-        setLastFetchTime('orders');
-      }
-      
-      return result.data || [];
-    } catch (error) {
-      console.error('Error fetching orders:', error);
-      return [];
-    } finally {
-      setLoadingState('orders', false);
-    }
-  };
+  // NO CACHE INITIALIZATION HERE - it's handled outside React
+  // NO SUBSCRIPTIONS - components handle their own subscriptions
+  // ONLY CRUD OPERATIONS
 
   const createOrder = async (orderData) => {
     try {
@@ -150,12 +36,25 @@ export const DataProvider = ({ children }) => {
         throw new Error(result.error || 'Failed to create order');
       }
 
-      // Invalidate cache to force refresh
-      setLastFetch(prev => ({ 
-        ...prev, 
-        orders: null, 
-        products: null 
-      }));
+      // Add new order to cache
+      if (result.data) {
+        globalCache.addItem('orders', result.data);
+      }
+
+      // Update product stock quantities in cache
+      if (orderData.items) {
+        orderData.items.forEach(item => {
+          const products = globalCache.getData('products');
+          const product = products.find(p => p.id === item.product_id);
+          if (product && product.stock_type === 'tracked' && product.stock_quantity !== null) {
+            const updatedProduct = {
+              ...product,
+              stock_quantity: Math.max(0, product.stock_quantity - item.quantity)
+            };
+            globalCache.updateItem('products', updatedProduct);
+          }
+        });
+      }
 
       return { data: result.data, error: null };
     } catch (error) {
@@ -164,9 +63,92 @@ export const DataProvider = ({ children }) => {
     }
   };
 
+  const createProduct = async (productData) => {
+    try {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/products`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(productData)
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to create product');
+      }
+
+      // Add new product to cache
+      if (result.data) {
+        globalCache.addItem('products', result.data);
+      }
+
+      return { data: result.data, error: null };
+    } catch (error) {
+      console.error('Error creating product:', error);
+      return { data: null, error };
+    }
+  };
+
+  const updateProduct = async (productId, updates) => {
+    try {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/products/${productId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(updates)
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to update product');
+      }
+
+      // Update product in cache
+      if (result.data) {
+        globalCache.updateItem('products', result.data);
+      }
+
+      return { data: result.data, error: null };
+    } catch (error) {
+      console.error('Error updating product:', error);
+      return { data: null, error };
+    }
+  };
+
+  const deleteProduct = async (productId) => {
+    try {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/products/${productId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to delete product');
+      }
+
+      // Remove product from cache
+      globalCache.removeItem('products', productId);
+
+      return { data: result.data, error: null };
+    } catch (error) {
+      console.error('Error deleting product:', error);
+      return { data: null, error };
+    }
+  };
+
   const getOrderStats = async (filters = {}) => {
     try {
-      const ordersData = await fetchOrders(false, filters);
+      const ordersData = await globalCache.fetchOrders(false, filters);
       
       const stats = {
         total_orders: ordersData.length,
@@ -194,111 +176,13 @@ export const DataProvider = ({ children }) => {
 
   const refreshData = async () => {
     await Promise.all([
-      fetchProducts(true),
-      fetchCategories(true),
-      fetchOrders(true)
+      globalCache.fetchProducts(true),
+      globalCache.fetchOrders(true)
     ]);
   };
 
-  const createProduct = async (productData) => {
-    try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/products`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(productData)
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to create product');
-      }
-
-      // Invalidate cache to force refresh
-      setLastFetch(prev => ({ 
-        ...prev, 
-        products: null, 
-        categories: null 
-      }));
-
-      return { data: result.data, error: null };
-    } catch (error) {
-      console.error('Error creating product:', error);
-      return { data: null, error };
-    }
-  };
-
-  const updateProduct = async (productId, updates) => {
-    try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/products/${productId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(updates)
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to update product');
-      }
-
-      // Invalidate cache to force refresh
-      setLastFetch(prev => ({ 
-        ...prev, 
-        products: null, 
-        categories: null 
-      }));
-
-      return { data: result.data, error: null };
-    } catch (error) {
-      console.error('Error updating product:', error);
-      return { data: null, error };
-    }
-  };
-
-  const deleteProduct = async (productId) => {
-    try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/products/${productId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to delete product');
-      }
-
-      // Invalidate cache to force refresh
-      setLastFetch(prev => ({ 
-        ...prev, 
-        products: null, 
-        categories: null 
-      }));
-
-      return { data: result.data, error: null };
-    } catch (error) {
-      console.error('Error deleting product:', error);
-      return { data: null, error };
-    }
-  };
-
   const value = {
-    products,
-    orders,
-    categories,
-    loading,
-    fetchProducts,
-    fetchCategories,
-    fetchOrders,
+    // Only expose CRUD operations, not data access
     createOrder,
     createProduct,
     updateProduct,

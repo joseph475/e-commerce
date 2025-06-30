@@ -14,6 +14,7 @@ import POSPage from '../pages/POSPage';
 import InventoryPage from '../pages/InventoryPage';
 import SalesPage from '../pages/SalesPage';
 import ReportsPage from '../pages/ReportsPage';
+import UserManagementPage from '../pages/UserManagementPage';
 
 const AppRouter = () => {
   return (
@@ -34,10 +35,7 @@ const AppRouter = () => {
         <ReportsPage path="/reports" />
       </RoleProtectedRoute>
       <RoleProtectedRoute path="/users" allowedRoles={['admin']}>
-        <div path="/users" className="p-8">
-          <h1 className="text-2xl font-bold">User Management</h1>
-          <p className="text-gray-600 mt-2">User management functionality coming soon...</p>
-        </div>
+        <UserManagementPage path="/users" />
       </RoleProtectedRoute>
       <RoleProtectedRoute path="/settings" allowedRoles={['admin']}>
         <div path="/settings" className="p-8">

@@ -9,6 +9,7 @@ import ConfirmModal from '../components/ui/ConfirmModal';
 import Toast from '../components/ui/Toast';
 import Grid from '../components/ui/Grid';
 import { formatCurrency } from '../utils/currency';
+import { useCache } from '../hooks/useCache';
 import { useData } from '../contexts/DataContext';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -540,7 +541,8 @@ const InventoryContent = ({
 );
 
 const InventoryPage = () => {
-  const { products, loading, fetchProducts, createProduct, updateProduct, deleteProduct } = useData();
+  const { products, loading } = useCache();
+  const { createProduct, updateProduct, deleteProduct } = useData();
   const { user } = useAuth();
   const [showProductForm, setShowProductForm] = useState(false);
   const [showStockModal, setShowStockModal] = useState(false);
@@ -554,10 +556,6 @@ const InventoryPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [toast, setToast] = useState({ isOpen: false, message: '', type: 'success' });
   const productsPerPage = 18;
-
-  useEffect(() => {
-    fetchProducts();
-  }, []);
 
   // Filter products
   const filteredProducts = products.filter(product => {
@@ -612,7 +610,6 @@ const InventoryPage = () => {
         throw new Error(result.error || 'Failed to create product');
       }
 
-      await fetchProducts(true); // Force refresh products list
       setShowProductForm(false);
       setSelectedProduct(null);
       setToast({ isOpen: true, message: 'Product created successfully!', type: 'success' });
@@ -668,7 +665,6 @@ const InventoryPage = () => {
         if (error) throw error;
       }
 
-      await fetchProducts(true); // Force refresh products list
       setShowProductForm(false);
       setSelectedProduct(null);
       setToast({ isOpen: true, message: 'Product updated successfully!', type: 'success' });
@@ -698,7 +694,6 @@ const InventoryPage = () => {
         throw new Error(result.error || 'Failed to update stock');
       }
 
-      await fetchProducts(true); // Force refresh products list
       setShowStockModal(false);
       setSelectedProduct(null);
       setToast({ isOpen: true, message: 'Stock updated successfully!', type: 'success' });
@@ -724,7 +719,6 @@ const InventoryPage = () => {
       const { error } = await deleteProduct(productToDelete.id);
       if (error) throw error;
 
-      await fetchProducts(true); // Force refresh products list
       setShowDeleteConfirm(false);
       setProductToDelete(null);
       setToast({ isOpen: true, message: 'Product deleted successfully!', type: 'success' });

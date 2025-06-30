@@ -7,7 +7,7 @@ import Button from '../components/ui/Button';
 import Grid from '../components/ui/Grid';
 import ResponsiveLayout from '../components/layout/ResponsiveLayout';
 import { formatCurrency } from '../utils/currency';
-import { useData } from '../contexts/DataContext';
+import { useCache } from '../hooks/useCache';
 import { useAuth } from '../contexts/AuthContext';
 
 const StatCard = ({ title, value, change, icon, color = 'blue' }) => {
@@ -91,43 +91,27 @@ const RecentActivity = ({ activities }) => (
 );
 
 const MobileDashboard = () => {
-  const { products, orders, loading, fetchProducts, fetchOrders, getOrderStats } = useData();
+  const { products, orders, lowStockProducts, recentOrders, initialized } = useCache();
   const { user } = useAuth();
-  const [stats, setStats] = useState({
-    todaySales: 0,
-    todayOrders: 0,
-    lowStock: 0,
-    activeUsers: 1
+  
+  // Calculate stats from cached data only
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  
+  const todayOrders = orders.filter(order => {
+    const orderDate = new Date(order.created_at);
+    return orderDate >= todayStart;
   });
+  
+  const stats = {
+    todaySales: todayOrders.reduce((sum, order) => sum + order.total_amount, 0),
+    todayOrders: todayOrders.length,
+    lowStock: lowStockProducts.length,
+    activeUsers: 1
+  };
 
-  useEffect(() => {
-    const loadData = async () => {
-      await fetchProducts();
-      await fetchOrders();
-      
-      // Calculate today's stats
-      const today = new Date().toISOString().split('T')[0];
-      const todayStats = await getOrderStats({
-        date_from: today + 'T00:00:00.000Z',
-        date_to: today + 'T23:59:59.999Z'
-      });
-      
-      // Count low stock items (less than 10)
-      const lowStockCount = products.filter(p => p.stock_quantity < 10).length;
-      
-      setStats({
-        todaySales: todayStats.total_revenue,
-        todayOrders: todayStats.total_orders,
-        lowStock: lowStockCount,
-        activeUsers: 1 // For now, just show current user
-      });
-    };
-    
-    loadData();
-  }, []);
-
-  // Generate recent activities from orders
-  const recentActivities = orders.slice(0, 4).map((order, index) => {
+  // Generate recent activities from cached orders
+  const recentActivities = recentOrders.map((order, index) => {
     const timeAgo = new Date(order.created_at);
     const now = new Date();
     const diffMinutes = Math.floor((now - timeAgo) / (1000 * 60));

@@ -8,7 +8,7 @@ import Card from '../components/ui/Card';
 import Modal from '../components/ui/Modal';
 import Toast from '../components/ui/Toast';
 import { formatCurrency } from '../utils/currency';
-import { useData } from '../contexts/DataContext';
+import { useCache } from '../hooks/useCache';
 
 const SalesDetailsModal = ({ isOpen, onClose, order, onPrintReceipt }) => {
   if (!order) return null;
@@ -458,17 +458,13 @@ const DesktopSalesLayout = ({
 };
 
 const SalesPage = () => {
-  const { orders, loading, fetchOrders } = useData();
+  const { orders, loading } = useCache();
   const [searchTerm, setSearchTerm] = useState('');
   const [dateFilter, setDateFilter] = useState('all');
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showOrderDetails, setShowOrderDetails] = useState(false);
   const [viewMode, setViewMode] = useState('table'); // Default to table for desktop
   const [toast, setToast] = useState({ isOpen: false, message: '', type: 'success' });
-
-  useEffect(() => {
-    fetchOrders();
-  }, []);
 
   // Filter orders based on search and date
   const filteredOrders = orders.filter(order => {

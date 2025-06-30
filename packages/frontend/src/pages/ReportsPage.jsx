@@ -7,21 +7,16 @@ import Input from '../components/ui/Input';
 import Card from '../components/ui/Card';
 import Toast from '../components/ui/Toast';
 import { formatCurrency } from '../utils/currency';
-import { useData } from '../contexts/DataContext';
+import { useCache } from '../hooks/useCache';
 
 const ReportsPage = () => {
-  const { orders, products, loading, fetchOrders, fetchProducts } = useData();
+  const { orders, products, loading } = useCache();
   const [dateRange, setDateRange] = useState('today');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [reportType, setReportType] = useState('sales');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [toast, setToast] = useState({ isOpen: false, message: '', type: 'success' });
-
-  useEffect(() => {
-    fetchOrders();
-    fetchProducts();
-  }, []);
 
   // Get unique categories
   const categories = [...new Set(

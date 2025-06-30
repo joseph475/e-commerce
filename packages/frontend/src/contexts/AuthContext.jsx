@@ -1,6 +1,7 @@
 import { h, createContext } from 'preact';
 import { useState, useEffect, useContext } from 'preact/hooks';
 import apiService from '../services/api';
+import { initializeCache } from '../utils/globalCache';
 
 const AuthContext = createContext();
 
@@ -42,6 +43,9 @@ export const AuthProvider = ({ children }) => {
               localStorage.removeItem('auth_user');
               setToken(null);
               setUser(null);
+            } else {
+              // Token is valid, initialize cache with token for users data
+              initializeCache(storedToken);
             }
           } catch (error) {
             // Network error or token invalid
@@ -85,6 +89,9 @@ export const AuthProvider = ({ children }) => {
       
       setToken(data.data.token);
       setUser(data.data.user);
+      
+      // Initialize cache after successful login with token for users data
+      initializeCache(data.data.token);
       
       return { data: data.data, error: null };
     } catch (error) {
