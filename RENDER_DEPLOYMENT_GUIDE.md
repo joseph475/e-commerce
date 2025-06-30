@@ -354,6 +354,31 @@ If you encounter `sh: 1: rimraf: not found` during build:
 - **Solution 3**: Use direct webpack build: `npm install && webpack --mode production`
 - **Root Cause**: Render doesn't install devDependencies in production builds by default
 
+**404 Not Found on Page Refresh (SPA Routing Issue):**
+If you get 404 errors when refreshing pages or accessing routes directly (e.g., `/pos` returns 404):
+
+**For Static Site Deployment:**
+1. **Check if `_redirects` file is in build output:**
+   - Go to your Render dashboard → Static Site → Latest Deploy → View Build Logs
+   - Look for `_redirects` file being copied during build
+   - If missing, ensure webpack is copying it correctly
+
+2. **Verify `_redirects` file content:**
+   ```
+   /*    /index.html   200
+   ```
+
+3. **Alternative: Use `public/_redirects` instead:**
+   - Create `packages/frontend/public/_redirects` with the same content
+   - Remove the webpack copy configuration for `src/_redirects`
+
+4. **Force redeploy:**
+   - Go to your static site dashboard
+   - Click "Manual Deploy" → "Deploy Latest Commit"
+
+**For Web Service Deployment:**
+- The Express server should handle SPA routing automatically via the catch-all route in `server.js`
+
 **Environment Variables:**
 - Ensure all required environment variables are set
 - Check for typos in variable names
