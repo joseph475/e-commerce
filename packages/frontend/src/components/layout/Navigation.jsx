@@ -2,6 +2,7 @@ import { h } from 'preact';
 import { useState } from 'preact/hooks';
 import ResponsiveLayout from './ResponsiveLayout';
 import { useSidebar } from './AppLayout';
+import { useAuth } from '../../contexts/AuthContext';
 
 const NavigationItem = ({ icon, label, href, active = false, onClick, mobile = false, collapsed = false }) => {
   const baseClasses = mobile 
@@ -39,8 +40,25 @@ const NavigationItem = ({ icon, label, href, active = false, onClick, mobile = f
   );
 };
 
+// Helper function to filter navigation items based on user role
+const getFilteredNavItems = (allItems, userRole) => {
+  if (userRole === 'admin') {
+    return allItems; // Admin can see all items
+  }
+  
+  if (userRole === 'cashier') {
+    // Cashier cannot access reports, user management, settings, and inventory
+    const restrictedPaths = ['/reports', '/users', '/settings', '/inventory'];
+    return allItems.filter(item => !restrictedPaths.includes(item.href));
+  }
+  
+  return allItems; // Default: show all items
+};
+
 const MobileBottomNav = ({ currentPath }) => {
-  const navItems = [
+  const { user } = useAuth();
+  
+  const allNavItems = [
     {
       icon: (
         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -65,12 +83,12 @@ const MobileBottomNav = ({ currentPath }) => {
     {
       icon: (
         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
         </svg>
       ),
-      label: 'Reports',
-      href: '/reports',
-      active: currentPath === '/reports'
+      label: 'Sales',
+      href: '/sales',
+      active: currentPath === '/sales'
     },
     {
       icon: (
@@ -84,9 +102,13 @@ const MobileBottomNav = ({ currentPath }) => {
     }
   ];
 
+  const navItems = getFilteredNavItems(allNavItems, user?.role);
+
+  const gridCols = navItems.length <= 3 ? `grid-cols-${navItems.length}` : 'grid-cols-4';
+  
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50">
-      <div className="grid grid-cols-4 h-16">
+      <div className={`grid ${gridCols} h-16`}>
         {navItems.map((item, index) => (
           <NavigationItem
             key={index}
@@ -100,7 +122,9 @@ const MobileBottomNav = ({ currentPath }) => {
 };
 
 const DesktopSidebar = ({ currentPath, isCollapsed, onToggleCollapse }) => {
-  const navItems = [
+  const { user } = useAuth();
+  
+  const allNavItems = [
     {
       icon: (
         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -121,6 +145,16 @@ const DesktopSidebar = ({ currentPath, isCollapsed, onToggleCollapse }) => {
       label: 'Point of Sale',
       href: '/pos',
       active: currentPath === '/pos'
+    },
+    {
+      icon: (
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+      ),
+      label: 'Sales & Orders',
+      href: '/sales',
+      active: currentPath === '/sales'
     },
     {
       icon: (
@@ -164,6 +198,8 @@ const DesktopSidebar = ({ currentPath, isCollapsed, onToggleCollapse }) => {
       active: currentPath === '/settings'
     }
   ];
+
+  const navItems = getFilteredNavItems(allNavItems, user?.role);
 
   return (
     <div className={`fixed left-0 top-0 h-full bg-white border-r border-gray-200 z-40 transition-all duration-300 ${

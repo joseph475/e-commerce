@@ -1,8 +1,7 @@
 import { h } from 'preact';
 import { useState, useEffect } from 'preact/hooks';
-import Header from '../components/layout/Header';
+import AppLayout from '../components/layout/AppLayout';
 import Footer from '../components/layout/Footer';
-import Navigation from '../components/layout/Navigation';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Grid from '../components/ui/Grid';
@@ -385,30 +384,15 @@ const DesktopDashboard = ({ apiStatus }) => {
 
 const HomePage = () => {
   return (
-    <div className="min-h-screen">
-      <Navigation currentPath="/" />
-      
-      <ResponsiveLayout
-        mobileComponent={
-          <div className="pb-16"> {/* Add padding for mobile bottom nav */}
-            <Header />
-            <main className="bg-gray-50">
-              <MobileDashboard />
-            </main>
-            <Footer />
-          </div>
-        }
-        desktopComponent={
-          <div className="ml-64"> {/* Add margin for desktop sidebar */}
-            <Header />
-            <main className="bg-gray-50">
-              <DesktopDashboard />
-            </main>
-            <Footer />
-          </div>
-        }
-      />
-    </div>
+    <AppLayout currentPath="/">
+      <main className="bg-gray-50">
+        <ResponsiveLayout
+          mobileComponent={<MobileDashboard />}
+          desktopComponent={<DesktopDashboard />}
+        />
+      </main>
+      <Footer />
+    </AppLayout>
   );
 };
 

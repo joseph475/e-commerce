@@ -4,15 +4,18 @@ import ResponsiveLayout from '../components/layout/ResponsiveLayout';
 import AppLayout from '../components/layout/AppLayout';
 import ProductGrid from '../components/pos/ProductGrid';
 import Cart from '../components/pos/Cart';
+import ReceiptModal from '../components/pos/ReceiptModal';
+import QRPaymentModal from '../components/pos/QRPaymentModal';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import Card from '../components/ui/Card';
 import Modal from '../components/ui/Modal';
+import Toast from '../components/ui/Toast';
 import { formatCurrency } from '../utils/currency';
 import { useData } from '../contexts/DataContext';
 import { useAuth } from '../contexts/AuthContext';
 
-const CheckoutModal = ({ isOpen, onClose, cart, onConfirm, loading }) => {
+const CheckoutModal = ({ isOpen, onClose, cart, onConfirm, onQRPayment, loading }) => {
   const [customerInfo, setCustomerInfo] = useState({
     name: '',
     email: '',
@@ -26,7 +29,8 @@ const CheckoutModal = ({ isOpen, onClose, cart, onConfirm, loading }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onConfirm({
+    
+    const orderData = {
       customerInfo,
       paymentMethod,
       items: cart.map(item => ({
@@ -37,7 +41,13 @@ const CheckoutModal = ({ isOpen, onClose, cart, onConfirm, loading }) => {
       subtotal,
       tax_amount: tax,
       total_amount: total
-    });
+    };
+
+    if (paymentMethod === 'qr_payment') {
+      onQRPayment(orderData);
+    } else {
+      onConfirm(orderData);
+    }
   };
 
   return h(Modal, { open: isOpen, onClose: onClose, size: "md" },
@@ -70,15 +80,45 @@ const CheckoutModal = ({ isOpen, onClose, cart, onConfirm, loading }) => {
         }),
         
         h('div', null,
-          h('label', { className: "block text-sm font-medium text-gray-700 mb-2" }, "Payment Method"),
-          h('select', {
-            value: paymentMethod,
-            onChange: (e) => setPaymentMethod(e.target.value),
-            className: "w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
-          },
-            h('option', { value: "cash" }, "Cash"),
-            h('option', { value: "card" }, "Credit/Debit Card"),
-            h('option', { value: "digital" }, "Digital Wallet")
+          h('label', { className: "block text-sm font-medium text-gray-700 mb-3" }, "Payment Method"),
+          h('div', { className: "space-y-3" },
+            // Cash Payment
+            h('label', { className: "flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50" },
+              h('input', {
+                type: "radio",
+                name: "paymentMethod",
+                value: "cash",
+                checked: paymentMethod === 'cash',
+                onChange: (e) => setPaymentMethod(e.target.value),
+                className: "mr-3"
+              }),
+              h('div', { className: "flex items-center" },
+                h('span', { className: "text-2xl mr-3" }, "💵"),
+                h('div', null,
+                  h('div', { className: "font-medium" }, "Cash"),
+                  h('div', { className: "text-sm text-gray-600" }, "Pay with cash")
+                )
+              )
+            ),
+            
+            // QR Payment
+            h('label', { className: "flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50" },
+              h('input', {
+                type: "radio",
+                name: "paymentMethod",
+                value: "qr_payment",
+                checked: paymentMethod === 'qr_payment',
+                onChange: (e) => setPaymentMethod(e.target.value),
+                className: "mr-3"
+              }),
+              h('div', { className: "flex items-center" },
+                h('span', { className: "text-2xl mr-3" }, "📱"),
+                h('div', null,
+                  h('div', { className: "font-medium" }, "QR Payment"),
+                  h('div', { className: "text-sm text-gray-600" }, "GCash, PayMaya, InstaPay & more")
+                )
+              )
+            )
           )
         ),
         
@@ -109,7 +149,7 @@ const CheckoutModal = ({ isOpen, onClose, cart, onConfirm, loading }) => {
             type: "submit",
             fullWidth: true,
             loading: loading
-          }, "Complete Order")
+          }, paymentMethod === 'qr_payment' ? "Generate QR Code" : "Complete Order")
         )
       )
     )
@@ -132,14 +172,10 @@ const MobilePOSLayout = ({
 }) => {
   const [activeTab, setActiveTab] = useState('products');
 
-  return h('div', { className: "h-screen flex flex-col bg-gray-50" },
-    // Header
-    h('div', { className: "bg-white border-b border-gray-200 p-4" },
-      h('h1', { className: "text-lg sm:text-xl md:text-2xl font-semibold text-gray-900" }, "POS System")
-    ),
+  return h('div', { className: "flex flex-col bg-gray-50 h-[calc(100vh-4rem)]" },
 
-    // Search and Filters
-    h('div', { className: "bg-white border-b border-gray-200 p-4 space-y-3" },
+    // Search
+    h('div', { className: "bg-white border-b border-gray-200 p-4" },
       h(Input, {
         placeholder: "Search products...",
         value: searchTerm,
@@ -148,18 +184,7 @@ const MobilePOSLayout = ({
         leftIcon: h('svg', { className: "w-5 h-5", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24" },
           h('path', { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" })
         )
-      }),
-      
-      h('select', {
-        value: selectedCategory,
-        onChange: (e) => onCategoryChange(e.target.value),
-        className: "w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500"
-      },
-        h('option', { value: "" }, "All Categories"),
-        categories.map(category => 
-          h('option', { key: category, value: category }, category)
-        )
-      )
+      })
     ),
 
     // Tab Navigation
@@ -182,7 +207,7 @@ const MobilePOSLayout = ({
           }`
         },
           "Cart",
-          cart.length > 0 && h('span', { className: "absolute -top-2 right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center" },
+          cart.length > 0 && h('span', { className: "absolute top-1 right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center" },
             cart.length
           )
         )
@@ -190,13 +215,39 @@ const MobilePOSLayout = ({
     ),
 
     // Content
-    h('div', { className: "flex-1 overflow-hidden" },
+    h('div', { className: "flex-1 overflow-y-auto" },
       activeTab === 'products' ? 
-        h(ProductGrid, {
-          products: products,
-          onAddToCart: onAddToCart,
-          loading: loading.products
-        }) :
+        h('div', null,
+          // Category Tabs (only shown in products tab)
+          h('div', { className: "bg-white border-b border-gray-200" },
+            h('div', { className: "flex space-x-8 overflow-x-auto px-4" },
+              h('button', {
+                onClick: () => onCategoryChange(''),
+                className: `whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm ${
+                  selectedCategory === ''
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`
+              }, "All Products"),
+              categories.map(category => 
+                h('button', {
+                  key: category,
+                  onClick: () => onCategoryChange(category),
+                  className: `whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm ${
+                    selectedCategory === category
+                      ? 'border-blue-500 text-blue-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`
+                }, category.charAt(0).toUpperCase() + category.slice(1).toLowerCase())
+              )
+            )
+          ),
+          h(ProductGrid, {
+            products: products,
+            onAddToCart: onAddToCart,
+            loading: loading.products
+          })
+        ) :
         h(Cart, {
           cart: cart,
           onUpdateQuantity: onUpdateQuantity,
@@ -221,44 +272,41 @@ const DesktopPOSLayout = ({
   categories,
   loading
 }) => {
-  return h('div', { className: "h-screen flex flex-col bg-gray-50" },
-    // Header
+  return h('div', { className: "flex flex-col bg-gray-50 h-[calc(100vh-4rem)]" },
+    // Search
     h('div', { className: "bg-white border-b border-gray-200 p-6" },
-      h('div', { className: "flex items-center justify-between" },
-        h('h1', { className: "text-2xl font-semibold text-gray-900" }, "POS System"),
-        h('div', { className: "flex items-center gap-4" },
-          h('span', { className: "text-sm text-gray-600" },
-            `${new Date().toLocaleDateString()} - ${new Date().toLocaleTimeString()}`
-          )
+      h(Input, {
+        placeholder: "Search products...",
+        value: searchTerm,
+        onChange: (e) => onSearchChange(e.target.value),
+        fullWidth: true,
+        leftIcon: h('svg', { className: "w-5 h-5", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24" },
+          h('path', { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" })
         )
-      )
+      })
     ),
 
-    // Search and Filters
-    h('div', { className: "bg-white border-b border-gray-200 p-6" },
-      h('div', { className: "flex gap-4" },
-        h('div', { className: "flex-1" },
-          h(Input, {
-            placeholder: "Search products...",
-            value: searchTerm,
-            onChange: (e) => onSearchChange(e.target.value),
-            fullWidth: true,
-            leftIcon: h('svg', { className: "w-5 h-5", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24" },
-              h('path', { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" })
-            )
-          })
-        ),
-        h('div', { className: "w-48" },
-          h('select', {
-            value: selectedCategory,
-            onChange: (e) => onCategoryChange(e.target.value),
-            className: "w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
-          },
-            h('option', { value: "" }, "All Categories"),
-            categories.map(category => 
-              h('option', { key: category, value: category }, category)
-            )
-          )
+    // Category Tabs
+    h('div', { className: "bg-white border-b border-gray-200" },
+      h('div', { className: "flex space-x-8 overflow-x-auto px-6" },
+        h('button', {
+          onClick: () => onCategoryChange(''),
+          className: `whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm ${
+            selectedCategory === ''
+              ? 'border-blue-500 text-blue-600'
+              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+          }`
+        }, "All Products"),
+        categories.map(category => 
+          h('button', {
+            key: category,
+            onClick: () => onCategoryChange(category),
+            className: `whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm ${
+              selectedCategory === category
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`
+          }, category.charAt(0).toUpperCase() + category.slice(1).toLowerCase())
         )
       )
     ),
@@ -295,6 +343,11 @@ const POSPage = () => {
   const [selectedCategory, setSelectedCategory] = useState('');
   const [showCheckout, setShowCheckout] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [showReceipt, setShowReceipt] = useState(false);
+  const [showQRPayment, setShowQRPayment] = useState(false);
+  const [qrOrderData, setQrOrderData] = useState(null);
+  const [lastOrder, setLastOrder] = useState(null);
+  const [toast, setToast] = useState({ isOpen: false, message: '', type: 'success' });
 
   useEffect(() => {
     const loadData = async () => {
@@ -305,11 +358,19 @@ const POSPage = () => {
     loadData();
   }, []);
 
+  // Get unique categories (case-insensitive)
+  const uniqueCategories = [...new Set(
+    products
+      .map(p => p.category)
+      .filter(Boolean)
+      .map(cat => cat.toLowerCase())
+  )].sort();
+
   // Filter products
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          product.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = !selectedCategory || product.category === selectedCategory;
+    const matchesCategory = !selectedCategory || product.category.toLowerCase() === selectedCategory.toLowerCase();
     return matchesSearch && matchesCategory;
   });
 
@@ -348,6 +409,290 @@ const POSPage = () => {
     setShowCheckout(true);
   };
 
+  const handleDirectPrint = (orderData) => {
+    // Enhanced device detection
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
+                         window.navigator.standalone || 
+                         document.referrer.includes('android-app://');
+    
+    const isTablet = /iPad|Android.*(?=.*\b(?:tablet|pad)\b)/i.test(navigator.userAgent) ||
+                     (window.screen.width >= 768 && window.screen.width <= 1024);
+    
+    const isMobile = /Mobile|Android|iPhone/i.test(navigator.userAgent) && !isTablet;
+
+    const currentDate = new Date();
+    const dateStr = currentDate.toLocaleDateString();
+    const timeStr = currentDate.toLocaleTimeString();
+
+    // Check for Web Bluetooth support
+    const hasBluetoothSupport = 'bluetooth' in navigator;
+
+    const receiptHTML = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Receipt</title>
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <style>
+            @media print {
+              @page {
+                size: 80mm 297mm;
+                margin: 0;
+              }
+              body {
+                margin: 0;
+                padding: 0;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+              }
+            }
+            body {
+              font-family: 'Courier New', monospace;
+              font-size: 11px;
+              line-height: 1.1;
+              margin: 0;
+              padding: 4mm;
+              width: 72mm;
+              background: white;
+              color: black;
+            }
+            .center { text-align: center; }
+            .right { text-align: right; }
+            .bold { font-weight: bold; }
+            .large { font-size: 13px; }
+            .separator {
+              border-top: 1px dashed #000;
+              margin: 3mm 0;
+              height: 1px;
+            }
+            .item-row {
+              display: flex;
+              justify-content: space-between;
+              margin: 1mm 0;
+            }
+            .item-name {
+              flex: 1;
+              overflow: hidden;
+              text-overflow: ellipsis;
+              white-space: nowrap;
+              margin-right: 2mm;
+            }
+            .item-qty {
+              margin-right: 2mm;
+              min-width: 15mm;
+            }
+            .item-price {
+              min-width: 15mm;
+              text-align: right;
+            }
+            .total-row {
+              display: flex;
+              justify-content: space-between;
+              margin: 1mm 0;
+            }
+            .total-label {
+              flex: 1;
+            }
+            .total-amount {
+              min-width: 20mm;
+              text-align: right;
+            }
+            .print-button {
+              display: block;
+              margin: 10mm auto;
+              padding: 5mm 10mm;
+              background: #007bff;
+              color: white;
+              border: none;
+              border-radius: 3mm;
+              font-size: 12px;
+              cursor: pointer;
+            }
+            @media print {
+              .print-button { display: none; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="center bold large">YOUR BUSINESS NAME</div>
+          <div class="center">123 Business Street</div>
+          <div class="center">City, State 12345</div>
+          <div class="center">Phone: (555) 123-4567</div>
+          
+          <div class="separator"></div>
+          
+          <div class="center bold">ORDER #${orderData.id.slice(-8)}</div>
+          <div class="item-row">
+            <span>Date:</span>
+            <span>${dateStr}</span>
+          </div>
+          <div class="item-row">
+            <span>Time:</span>
+            <span>${timeStr}</span>
+          </div>
+          <div class="item-row">
+            <span>Cashier:</span>
+            <span>POS System</span>
+          </div>
+          
+          <div class="separator"></div>
+          
+          ${orderData.customerInfo && orderData.customerInfo.name ? `
+            <div class="bold">CUSTOMER:</div>
+            <div>${orderData.customerInfo.name}</div>
+            ${orderData.customerInfo.phone ? `<div>${orderData.customerInfo.phone}</div>` : ''}
+            ${orderData.customerInfo.email ? `<div>${orderData.customerInfo.email}</div>` : ''}
+            <div class="separator"></div>
+          ` : ''}
+          
+          <div class="bold">ITEMS:</div>
+          ${orderData.items.map(item => `
+            <div class="item-row">
+              <span class="item-name">${item.product_name || 'Item'}</span>
+              <span class="item-qty">${item.quantity}x</span>
+              <span class="item-price">${formatCurrency(item.unit_price)}</span>
+            </div>
+            <div class="right">${formatCurrency(item.quantity * item.unit_price)}</div>
+          `).join('')}
+          
+          <div class="separator"></div>
+          
+          <div class="total-row">
+            <span class="total-label">Subtotal:</span>
+            <span class="total-amount">${formatCurrency(orderData.subtotal)}</span>
+          </div>
+          <div class="total-row">
+            <span class="total-label">Tax (10%):</span>
+            <span class="total-amount">${formatCurrency(orderData.tax_amount)}</span>
+          </div>
+          <div class="total-row bold large">
+            <span class="total-label">TOTAL:</span>
+            <span class="total-amount">${formatCurrency(orderData.total_amount)}</span>
+          </div>
+          
+          <div class="separator"></div>
+          
+          <div class="total-row">
+            <span class="total-label">Payment Method:</span>
+            <span class="total-amount">${orderData.paymentMethod.toUpperCase()}</span>
+          </div>
+          <div class="total-row">
+            <span class="total-label">Amount Paid:</span>
+            <span class="total-amount">${formatCurrency(orderData.total_amount)}</span>
+          </div>
+          <div class="total-row">
+            <span class="total-label">Change:</span>
+            <span class="total-amount">${formatCurrency(0)}</span>
+          </div>
+          
+          <div class="separator"></div>
+          
+          <div class="center">Thank you for your business!</div>
+          <div class="center">Please come again</div>
+          
+          <div class="separator"></div>
+          
+          <div class="center">*** CUSTOMER COPY ***</div>
+          
+          <button class="print-button" onclick="window.print(); setTimeout(() => window.close(), 500);">
+            🖨️ Print Receipt
+          </button>
+          
+          <div style="height: 10mm;"></div>
+          
+          <script>
+            // Auto-print for desktop PWAs, manual for mobile
+            if (${isStandalone} && !navigator.userAgent.match(/Mobile|Android|iPhone|iPad/)) {
+              setTimeout(() => {
+                window.print();
+                setTimeout(() => window.close(), 1000);
+              }, 100);
+            }
+          </script>
+        </body>
+      </html>
+    `;
+
+    if (isStandalone && /Mobile|Android|iPhone|iPad/.test(navigator.userAgent)) {
+      // For mobile PWAs, open in same window with print button
+      const printWindow = window.open('', '_blank');
+      printWindow.document.write(receiptHTML);
+      printWindow.document.close();
+    } else {
+      // For desktop PWAs and browsers, use auto-print
+      const printWindow = window.open('', '_blank');
+      printWindow.document.write(receiptHTML);
+      printWindow.document.close();
+      printWindow.focus();
+    }
+  };
+
+  const handleQRPayment = (orderData) => {
+    // Close checkout modal and show QR payment modal
+    setShowCheckout(false);
+    setQrOrderData(orderData);
+    setShowQRPayment(true);
+  };
+
+  const handleQRPaymentComplete = async (completedOrderData) => {
+    setCheckoutLoading(true);
+    try {
+      const { data, error } = await createOrder({
+        customer_name: completedOrderData.customerInfo.name,
+        customer_email: completedOrderData.customerInfo.email,
+        customer_phone: completedOrderData.customerInfo.phone,
+        items: completedOrderData.items,
+        payment_method: 'qr_payment',
+        tax_amount: completedOrderData.tax_amount,
+        discount_amount: 0,
+        notes: `QR Payment - Transaction ID: ${completedOrderData.transactionId}`,
+        status: 'completed'
+      });
+
+      if (error) {
+        throw new Error(error.message || 'Failed to create order');
+      }
+      
+      // Prepare receipt data with product names
+      const receiptData = {
+        id: data.id,
+        customerInfo: completedOrderData.customerInfo,
+        paymentMethod: 'qr_payment',
+        transactionId: completedOrderData.transactionId,
+        items: completedOrderData.items.map(item => ({
+          ...item,
+          product_name: cart.find(cartItem => cartItem.id === item.product_id)?.name || 'Unknown Product'
+        })),
+        subtotal: completedOrderData.subtotal,
+        tax_amount: completedOrderData.tax_amount,
+        total_amount: completedOrderData.total_amount
+      };
+      
+      // Clear cart and close QR payment modal
+      setCart([]);
+      setShowQRPayment(false);
+      setQrOrderData(null);
+      
+      // Store order data and directly print receipt
+      setLastOrder(receiptData);
+      handleDirectPrint(receiptData);
+      
+      // Show success message
+      setToast({ isOpen: true, message: `QR Payment completed! Order #${data.id.slice(-8)}`, type: 'success' });
+    } catch (error) {
+      console.error('Error completing QR payment order:', error);
+      setToast({ isOpen: true, message: 'Error completing order. Please try again.', type: 'error' });
+    } finally {
+      setCheckoutLoading(false);
+    }
+  };
+
+  const handleQRPaymentCancel = () => {
+    setShowQRPayment(false);
+    setQrOrderData(null);
+    setShowCheckout(true); // Return to checkout modal
+  };
+
   const handleConfirmOrder = async (orderData) => {
     setCheckoutLoading(true);
     try {
@@ -359,22 +704,41 @@ const POSPage = () => {
         payment_method: orderData.paymentMethod,
         tax_amount: orderData.tax_amount,
         discount_amount: 0,
-        notes: ''
+        notes: '',
+        status: 'completed'
       });
 
       if (error) {
         throw new Error(error.message || 'Failed to create order');
       }
       
-      // Clear cart and close modal
+      // Prepare receipt data with product names
+      const receiptData = {
+        id: data.id,
+        customerInfo: orderData.customerInfo,
+        paymentMethod: orderData.paymentMethod,
+        items: orderData.items.map(item => ({
+          ...item,
+          product_name: cart.find(cartItem => cartItem.id === item.product_id)?.name || 'Unknown Product'
+        })),
+        subtotal: orderData.subtotal,
+        tax_amount: orderData.tax_amount,
+        total_amount: orderData.total_amount
+      };
+      
+      // Clear cart and close checkout modal
       setCart([]);
       setShowCheckout(false);
       
+      // Store order data and directly print receipt
+      setLastOrder(receiptData);
+      handleDirectPrint(receiptData);
+      
       // Show success message
-      alert(`Order #${data.id.slice(-8)} completed successfully!`);
+      setToast({ isOpen: true, message: `Order #${data.id.slice(-8)} completed successfully!`, type: 'success' });
     } catch (error) {
       console.error('Error completing order:', error);
-      alert('Error completing order. Please try again.');
+      setToast({ isOpen: true, message: 'Error completing order. Please try again.', type: 'error' });
     } finally {
       setCheckoutLoading(false);
     }
@@ -394,7 +758,7 @@ const POSPage = () => {
           onSearchChange: setSearchTerm,
           selectedCategory: selectedCategory,
           onCategoryChange: setSelectedCategory,
-          categories: categories,
+          categories: uniqueCategories,
           loading: loading
         }),
         desktopComponent: h(DesktopPOSLayout, {
@@ -408,7 +772,7 @@ const POSPage = () => {
           onSearchChange: setSearchTerm,
           selectedCategory: selectedCategory,
           onCategoryChange: setSelectedCategory,
-          categories: categories,
+          categories: uniqueCategories,
           loading: loading
         })
       })
@@ -419,7 +783,29 @@ const POSPage = () => {
       onClose: () => setShowCheckout(false),
       cart: cart,
       onConfirm: handleConfirmOrder,
+      onQRPayment: handleQRPayment,
       loading: checkoutLoading
+    }),
+
+    h(QRPaymentModal, {
+      isOpen: showQRPayment,
+      onClose: () => setShowQRPayment(false),
+      orderData: qrOrderData,
+      onPaymentComplete: handleQRPaymentComplete,
+      onPaymentCancel: handleQRPaymentCancel
+    }),
+
+    h(ReceiptModal, {
+      isOpen: showReceipt,
+      onClose: () => setShowReceipt(false),
+      orderData: lastOrder
+    }),
+
+    h(Toast, {
+      isOpen: toast.isOpen,
+      onClose: () => setToast({ ...toast, isOpen: false }),
+      message: toast.message,
+      type: toast.type
     })
   );
 };

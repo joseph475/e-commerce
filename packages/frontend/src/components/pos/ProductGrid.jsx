@@ -13,11 +13,11 @@ const ProductCard = ({ product, onAddToCart, view = 'desktop' }) => {
   return (
     <Card 
       hover 
-      padding="sm"
-      className="cursor-pointer transition-all duration-200"
+      padding="none"
+      className="cursor-pointer transition-all duration-200 overflow-hidden"
       onClick={() => onAddToCart(product)}
     >
-      <div className={`bg-gray-100 rounded-lg overflow-hidden ${isMobile ? 'aspect-square mb-3' : 'aspect-[4/3] mb-2'}`}>
+      <div className="aspect-square relative overflow-hidden">
         {product.image_url ? (
           <img 
             src={product.image_url} 
@@ -25,50 +25,45 @@ const ProductCard = ({ product, onAddToCart, view = 'desktop' }) => {
             className="w-full h-full object-cover"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-gray-400">
-            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-400">
+            <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
           </div>
         )}
-      </div>
-      
-      <div className={`${isMobile ? 'space-y-2' : 'space-y-1'}`}>
-        <h3 className="font-semibold text-gray-900 line-clamp-1 text-xs sm:text-sm md:text-base">
-          {product.name}
-        </h3>
         
-        <div className="flex items-center justify-between">
-          <span className="font-bold text-blue-600 text-sm sm:text-base md:text-lg">
-            {formatCurrency(product.price)}
-          </span>
-          
-          {product.stock_quantity <= 5 && product.stock_quantity > 0 && (
-            <span className="text-xs text-orange-600 bg-orange-100 px-2 py-1 rounded">
-              Low Stock
-            </span>
-          )}
-          
-          {product.stock_quantity === 0 && (
-            <span className="text-xs text-red-600 bg-red-100 px-2 py-1 rounded">
-              Out of Stock
-            </span>
-          )}
+        {/* Overlay with product info */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent">
+          <div className="absolute bottom-0 left-0 right-0 p-3">
+            {/* Glossy blurred background */}
+            <div className="absolute inset-0 bg-white/20 backdrop-blur-sm rounded-lg"></div>
+            
+            {/* Content */}
+            <div className="relative">
+              <h3 className="font-semibold text-white line-clamp-1 text-sm mb-1 drop-shadow-sm">
+                {product.name}
+              </h3>
+              
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-white text-base drop-shadow-sm">
+                  {formatCurrency(product.price)}
+                </span>
+                
+                {product.stock_quantity <= 5 && product.stock_quantity > 0 && (
+                  <span className="text-xs text-orange-200 bg-orange-500/80 px-2 py-1 rounded backdrop-blur-sm">
+                    Low Stock
+                  </span>
+                )}
+                
+                {product.stock_quantity === 0 && (
+                  <span className="text-xs text-red-200 bg-red-500/80 px-2 py-1 rounded backdrop-blur-sm">
+                    Out of Stock
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
-        
-        {!isMobile && (
-          <Button 
-            fullWidth 
-            size="sm"
-            disabled={product.stock_quantity === 0}
-            onClick={(e) => {
-              e.stopPropagation();
-              onAddToCart(product);
-            }}
-          >
-            Add to Cart
-          </Button>
-        )}
       </div>
     </Card>
   );
@@ -116,7 +111,7 @@ const DesktopProductGrid = ({ products, onAddToCart, loading }) => {
 
   return (
     <div className="p-4">
-      <Grid cols={{ md: 2, lg: 3, xl: 4 }} gap={3}>
+      <Grid cols={{ md: 2, lg: 4, xl: 5 }} gap={3}>
         {products.map(product => (
           <ProductCard 
             key={product.id} 

@@ -83,7 +83,7 @@ const CartSummary = ({ cart, onCheckout, loading, isMobile = false }) => {
       
       <Button
         fullWidth
-        size={isMobile ? 'md' : 'xl'}
+        size="md"
         onClick={onCheckout}
         loading={loading}
         disabled={cart.length === 0}

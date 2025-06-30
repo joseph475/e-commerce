@@ -116,7 +116,8 @@ router.post('/', async (req, res) => {
       payment_method, 
       discount_amount = 0,
       tax_amount = 0,
-      notes 
+      notes,
+      status = 'pending'
     } = req.body;
 
     // Calculate totals
@@ -135,7 +136,7 @@ router.post('/', async (req, res) => {
         discount_amount,
         total_amount,
         payment_method,
-        status: 'pending',
+        status,
         notes
       }])
       .select()

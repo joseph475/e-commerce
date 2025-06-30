@@ -5,6 +5,8 @@ import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import Card from '../components/ui/Card';
 import Modal from '../components/ui/Modal';
+import ConfirmModal from '../components/ui/ConfirmModal';
+import Toast from '../components/ui/Toast';
 import Grid from '../components/ui/Grid';
 import { formatCurrency } from '../utils/currency';
 import { useData } from '../contexts/DataContext';
@@ -276,275 +278,127 @@ const StockUpdateModal = ({ isOpen, onClose, product, onSubmit, loading }) => {
 const ProductCard = ({ product, onEdit, onUpdateStock, onDelete }) => {
   const getStockStatus = () => {
     if (product.stock_type === 'unlimited') {
-      return { text: 'Unlimited', color: 'text-green-600 bg-green-100' };
+      return { text: 'Unlimited', color: 'text-green-200 bg-green-500/80' };
     }
     
     if (product.stock_type === 'recipe-based') {
-      return { text: 'Recipe Based', color: 'text-purple-600 bg-purple-100' };
+      return { text: 'Recipe Based', color: 'text-purple-200 bg-purple-500/80' };
     }
     
     const stock = product.stock_quantity || 0;
     if (stock === 0) {
-      return { text: 'Out of Stock', color: 'text-red-600 bg-red-100' };
+      return { text: 'Out of Stock', color: 'text-red-200 bg-red-500/80' };
     } else if (stock <= 5) {
-      return { text: `${stock} (Low)`, color: 'text-orange-600 bg-orange-100' };
+      return { text: `${stock} (Low)`, color: 'text-orange-200 bg-orange-500/80' };
     } else {
-      return { text: stock.toString(), color: 'text-green-600 bg-green-100' };
+      return { text: stock.toString(), color: 'text-green-200 bg-green-500/80' };
     }
   };
 
   const stockStatus = getStockStatus();
 
-  return h(Card, { className: "h-full" },
-    h('div', { className: "p-4 space-y-4" },
-      // Image
-      h('div', { className: "aspect-square bg-gray-100 rounded-lg overflow-hidden" },
-        product.image_url ? 
-          h('img', {
-            src: product.image_url,
-            alt: product.name,
-            className: "w-full h-full object-cover"
-          }) :
-          h('div', { className: "w-full h-full flex items-center justify-center text-gray-400" },
-            h('svg', { className: "w-12 h-12", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24" },
-              h('path', { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" })
-            )
-          )
-      ),
-      
-      // Product Info
-      h('div', { className: "space-y-2" },
-        h('h3', { className: "font-semibold text-gray-900 line-clamp-2" }, product.name),
-        h('div', { className: "flex items-center justify-between" },
-          h('span', { className: "font-bold text-lg text-blue-600" }, formatCurrency(product.price)),
-          h('span', { className: `px-2 py-1 text-xs font-medium rounded-full ${stockStatus.color}` }, 
-            stockStatus.text
+  return h(Card, { 
+    className: "h-full",
+    padding: "none",
+    hover: true
+  },
+    h('div', { className: "aspect-square relative overflow-hidden rounded-lg" },
+      product.image_url ? 
+        h('img', {
+          src: product.image_url,
+          alt: product.name,
+          className: "w-full h-full object-cover"
+        }) :
+        h('div', { className: "w-full h-full flex items-center justify-center bg-gray-100 text-gray-400" },
+          h('svg', { className: "w-12 h-12", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24" },
+            h('path', { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" })
           )
         ),
-        product.category && h('span', { className: "inline-block px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded" }, 
-          product.category
-        )
-      ),
       
-      // Actions
-      h('div', { className: "flex gap-2" },
-        h(Button, {
-          size: "sm",
-          variant: "outline",
-          fullWidth: true,
-          onClick: () => onEdit(product)
-        }, "Edit"),
+      // Overlay with product info and actions
+      h('div', { className: "absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" },
+        // Top right action icons
+        h('div', { className: "absolute top-2 right-2 flex gap-1" },
+          h('button', {
+            onClick: (e) => {
+              e.stopPropagation();
+              onEdit(product);
+            },
+            className: "p-1.5 bg-white/60 backdrop-blur-sm rounded-full text-gray-700 hover:bg-white/80 transition-colors"
+          },
+            h('svg', { className: "w-4 h-4", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24" },
+              h('path', { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" })
+            )
+          ),
+          product.stock_type === 'tracked' && h('button', {
+            onClick: (e) => {
+              e.stopPropagation();
+              onUpdateStock(product);
+            },
+            className: "p-1.5 bg-blue-500/60 backdrop-blur-sm rounded-full text-white hover:bg-blue-500/80 transition-colors"
+          },
+            h('svg', { className: "w-4 h-4", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24" },
+              h('path', { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" })
+            )
+          ),
+          h('button', {
+            onClick: (e) => {
+              e.stopPropagation();
+              onDelete(product.id);
+            },
+            className: "p-1.5 bg-red-500/60 backdrop-blur-sm rounded-full text-white hover:bg-red-500/80 transition-colors"
+          },
+            h('svg', { className: "w-4 h-4", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24" },
+              h('path', { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" })
+            )
+          )
+        ),
         
-        product.stock_type === 'tracked' && h(Button, {
-          size: "sm",
-          fullWidth: true,
-          onClick: () => onUpdateStock(product)
-        }, "Stock"),
-        
-        h(Button, {
-          size: "sm",
-          variant: "outline",
-          fullWidth: true,
-          onClick: () => onDelete(product.id),
-          className: "text-red-600 border-red-200 hover:bg-red-50"
-        }, "Delete")
+        // Product info overlay
+        h('div', { className: "absolute bottom-0 left-0 right-0 p-3" },
+          // Glossy blurred background
+          h('div', { className: "absolute inset-0 bg-white/20 backdrop-blur-sm rounded-lg" }),
+          
+          // Content
+          h('div', { className: "relative space-y-2" },
+            h('h3', { className: "font-semibold text-white line-clamp-1 text-sm drop-shadow-sm" }, product.name),
+            h('div', { className: "flex items-center justify-between" },
+              h('span', { className: "font-bold text-white text-base drop-shadow-sm" }, formatCurrency(product.price)),
+              h('span', { className: `px-2 py-1 text-xs font-medium rounded backdrop-blur-sm ${stockStatus.color}` }, 
+                stockStatus.text
+              )
+            )
+          )
+        )
       )
     )
   );
 };
 
-const InventoryPage = () => {
-  const { products, loading, fetchProducts, createProduct, updateProduct, deleteProduct } = useData();
-  const { user } = useAuth();
-  const [showProductForm, setShowProductForm] = useState(false);
-  const [showStockModal, setShowStockModal] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('');
-  const [formLoading, setFormLoading] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const productsPerPage = 12;
-
-  useEffect(() => {
-    fetchProducts();
-  }, []);
-
-  // Filter products
-  const filteredProducts = products.filter(product => {
-    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         product.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = !selectedCategory || product.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
-
-  // Pagination calculations
-  const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
-  const startIndex = (currentPage - 1) * productsPerPage;
-  const endIndex = startIndex + productsPerPage;
-  const currentProducts = filteredProducts.slice(startIndex, endIndex);
-
-  // Reset to first page when filters change
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm, selectedCategory]);
-
-  // Get unique categories
-  const categories = [...new Set(products.map(p => p.category).filter(Boolean))];
-
-  const handleCreateProduct = async (formData) => {
-    setFormLoading(true);
-    try {
-      const formDataToSend = new FormData();
-      Object.keys(formData).forEach(key => {
-        if (key === 'image' && formData[key]) {
-          formDataToSend.append('image', formData[key]);
-        } else if (key !== 'image') {
-          formDataToSend.append(key, formData[key]);
-        }
-      });
-
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/products/with-image`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
-        },
-        body: formDataToSend
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to create product');
-      }
-
-      await fetchProducts(true); // Force refresh products list
-      setShowProductForm(false);
-      setSelectedProduct(null);
-      alert('Product created successfully!');
-    } catch (error) {
-      console.error('Error creating product:', error);
-      alert('Error creating product: ' + error.message);
-    } finally {
-      setFormLoading(false);
-    }
-  };
-
-  const handleUpdateProduct = async (formData) => {
-    setFormLoading(true);
-    try {
-      // Check if we have an image to upload
-      const hasImage = formData.image && formData.image instanceof File;
-      
-      if (hasImage) {
-        // Use the with-image endpoint for updates with image uploads
-        const formDataToSend = new FormData();
-        Object.keys(formData).forEach(key => {
-          if (key === 'image' && formData[key]) {
-            formDataToSend.append('image', formData[key]);
-          } else if (key !== 'image') {
-            formDataToSend.append(key, formData[key]);
-          }
-        });
-
-        const response = await fetch(`${process.env.REACT_APP_API_URL}/api/products/${selectedProduct.id}/with-image`, {
-          method: 'PUT',
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
-          },
-          body: formDataToSend
-        });
-
-        const result = await response.json();
-
-        if (!response.ok) {
-          throw new Error(result.error || 'Failed to update product');
-        }
-      } else {
-        // Use the regular update endpoint for updates without image changes
-        const { data, error } = await updateProduct(selectedProduct.id, {
-          name: formData.name,
-          description: formData.description,
-          price: parseFloat(formData.price),
-          category: formData.category,
-          stock_quantity: formData.stock_type === 'unlimited' ? null : parseInt(formData.stock_quantity) || 0,
-          stock_type: formData.stock_type
-        });
-
-        if (error) throw error;
-      }
-
-      await fetchProducts(true); // Force refresh products list
-      setShowProductForm(false);
-      setSelectedProduct(null);
-      alert('Product updated successfully!');
-    } catch (error) {
-      console.error('Error updating product:', error);
-      alert('Error updating product: ' + error.message);
-    } finally {
-      setFormLoading(false);
-    }
-  };
-
-  const handleUpdateStock = async (productId, stockData) => {
-    setFormLoading(true);
-    try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/products/${productId}/stock`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
-        },
-        body: JSON.stringify(stockData)
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to update stock');
-      }
-
-      await fetchProducts(); // Refresh products list
-      setShowStockModal(false);
-      setSelectedProduct(null);
-      alert('Stock updated successfully!');
-    } catch (error) {
-      console.error('Error updating stock:', error);
-      alert('Error updating stock: ' + error.message);
-    } finally {
-      setFormLoading(false);
-    }
-  };
-
-  const handleDeleteProduct = async (productId) => {
-    if (!confirm('Are you sure you want to delete this product?')) return;
-
-    try {
-      const { error } = await deleteProduct(productId);
-      if (error) throw error;
-
-      await fetchProducts(); // Refresh products list
-      alert('Product deleted successfully!');
-    } catch (error) {
-      console.error('Error deleting product:', error);
-      alert('Error deleting product: ' + error.message);
-    }
-  };
-
-  const InventoryContent = () => (
-    h('div', { className: "p-4 md:p-8 space-y-6" },
-      // Header
-      h('div', { className: "flex items-center justify-between" },
-        h('h1', { className: "text-2xl font-semibold text-gray-900" }, "Inventory Management"),
-        h(Button, {
-          onClick: () => {
-            setSelectedProduct(null);
-            setShowProductForm(true);
-          }
-        }, "Add Product")
-      ),
-
-      // Filters
-      h('div', { className: "flex gap-4" },
+const InventoryContent = ({ 
+  products, 
+  loading, 
+  searchTerm, 
+  setSearchTerm, 
+  selectedCategory, 
+  setSelectedCategory, 
+  currentProducts, 
+  categories, 
+  currentPage, 
+  setCurrentPage, 
+  totalPages, 
+  startIndex, 
+  endIndex, 
+  filteredProducts, 
+  setSelectedProduct, 
+  setShowProductForm, 
+  setShowStockModal, 
+  handleDeleteProduct 
+}) => (
+  h('div', { className: "flex flex-col bg-gray-50 h-[calc(100vh-4rem)]" },
+    // Search and Add Product Row
+    h('div', { className: "bg-white border-b border-gray-200 p-6" },
+      h('div', { className: "flex gap-4 items-center" },
         h('div', { className: "flex-1" },
           h(Input, {
             placeholder: "Search products...",
@@ -556,30 +410,51 @@ const InventoryPage = () => {
             )
           })
         ),
-        h('div', { className: "w-48" },
-          h('select', {
-            value: selectedCategory,
-            onChange: (e) => setSelectedCategory(e.target.value),
-            className: "w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
-          },
-            h('option', { value: "" }, "All Categories"),
-            categories.map(category => 
-              h('option', { key: category, value: category }, category)
-            )
-          )
-        )
-      ),
+        h(Button, {
+          onClick: () => {
+            setSelectedProduct(null);
+            setShowProductForm(true);
+          }
+        }, "Add Product")
+      )
+    ),
 
-      // Products Grid
+    // Category Tabs
+    h('div', { className: "bg-white border-b border-gray-200" },
+      h('div', { className: "flex space-x-8 overflow-x-auto px-6" },
+        h('button', {
+          onClick: () => setSelectedCategory(''),
+          className: `whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm ${
+            selectedCategory === ''
+              ? 'border-blue-500 text-blue-600'
+              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+          }`
+        }, "All Products"),
+        categories.map(category => 
+          h('button', {
+            key: category,
+            onClick: () => setSelectedCategory(category),
+            className: `whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm ${
+              selectedCategory === category
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`
+          }, category.charAt(0).toUpperCase() + category.slice(1).toLowerCase())
+        )
+      )
+    ),
+
+    // Products Grid
+    h('div', { className: "flex-1 overflow-y-auto p-6" },
       loading.products ? 
-        h('div', { className: "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-6" },
+        h(Grid, { cols: { md: 3, lg: 4, xl: 6 }, gap: 3 },
           [...Array(12)].map((_, i) => 
             h('div', { key: i, className: "bg-gray-200 animate-pulse rounded-lg aspect-square" })
           )
         ) :
         currentProducts.length > 0 ?
           h('div', null,
-            h('div', { className: "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-6" },
+            h(Grid, { cols: { md: 3, lg: 4, xl: 6 }, gap: 3 },
               currentProducts.map(product => 
                 h(ProductCard, {
                   key: product.id,
@@ -659,35 +534,274 @@ const InventoryPage = () => {
                 }
               }, "Add Product")
             )
-          ),
-
-      // Modals
-      h(ProductForm, {
-        isOpen: showProductForm,
-        onClose: () => {
-          setShowProductForm(false);
-          setSelectedProduct(null);
-        },
-        product: selectedProduct,
-        onSubmit: selectedProduct ? handleUpdateProduct : handleCreateProduct,
-        loading: formLoading
-      }),
-
-      h(StockUpdateModal, {
-        isOpen: showStockModal,
-        onClose: () => {
-          setShowStockModal(false);
-          setSelectedProduct(null);
-        },
-        product: selectedProduct,
-        onSubmit: handleUpdateStock,
-        loading: formLoading
-      })
+          )
     )
-  );
+  )
+);
+
+const InventoryPage = () => {
+  const { products, loading, fetchProducts, createProduct, updateProduct, deleteProduct } = useData();
+  const { user } = useAuth();
+  const [showProductForm, setShowProductForm] = useState(false);
+  const [showStockModal, setShowStockModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [productToDelete, setProductToDelete] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('');
+  const [formLoading, setFormLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [toast, setToast] = useState({ isOpen: false, message: '', type: 'success' });
+  const productsPerPage = 18;
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  // Filter products
+  const filteredProducts = products.filter(product => {
+    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         product.description.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = !selectedCategory || product.category.toLowerCase() === selectedCategory.toLowerCase();
+    return matchesSearch && matchesCategory;
+  });
+
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
+  const startIndex = (currentPage - 1) * productsPerPage;
+  const endIndex = startIndex + productsPerPage;
+  const currentProducts = filteredProducts.slice(startIndex, endIndex);
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedCategory]);
+
+  // Get unique categories (case-insensitive)
+  const categories = [...new Set(
+    products
+      .map(p => p.category)
+      .filter(Boolean)
+      .map(cat => cat.toLowerCase())
+  )].sort();
+
+  const handleCreateProduct = async (formData) => {
+    setFormLoading(true);
+    try {
+      const formDataToSend = new FormData();
+      Object.keys(formData).forEach(key => {
+        if (key === 'image' && formData[key]) {
+          formDataToSend.append('image', formData[key]);
+        } else if (key !== 'image') {
+          formDataToSend.append(key, formData[key]);
+        }
+      });
+
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/products/with-image`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+        },
+        body: formDataToSend
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to create product');
+      }
+
+      await fetchProducts(true); // Force refresh products list
+      setShowProductForm(false);
+      setSelectedProduct(null);
+      setToast({ isOpen: true, message: 'Product created successfully!', type: 'success' });
+    } catch (error) {
+      console.error('Error creating product:', error);
+      setToast({ isOpen: true, message: 'Error creating product: ' + error.message, type: 'error' });
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
+  const handleUpdateProduct = async (formData) => {
+    setFormLoading(true);
+    try {
+      // Check if we have an image to upload
+      const hasImage = formData.image && formData.image instanceof File;
+      
+      if (hasImage) {
+        // Use the with-image endpoint for updates with image uploads
+        const formDataToSend = new FormData();
+        Object.keys(formData).forEach(key => {
+          if (key === 'image' && formData[key]) {
+            formDataToSend.append('image', formData[key]);
+          } else if (key !== 'image') {
+            formDataToSend.append(key, formData[key]);
+          }
+        });
+
+        const response = await fetch(`${process.env.REACT_APP_API_URL}/api/products/${selectedProduct.id}/with-image`, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+          },
+          body: formDataToSend
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.error || 'Failed to update product');
+        }
+      } else {
+        // Use the regular update endpoint for updates without image changes
+        const { data, error } = await updateProduct(selectedProduct.id, {
+          name: formData.name,
+          description: formData.description,
+          price: parseFloat(formData.price),
+          category: formData.category,
+          stock_quantity: formData.stock_type === 'unlimited' ? null : parseInt(formData.stock_quantity) || 0,
+          stock_type: formData.stock_type
+        });
+
+        if (error) throw error;
+      }
+
+      await fetchProducts(true); // Force refresh products list
+      setShowProductForm(false);
+      setSelectedProduct(null);
+      setToast({ isOpen: true, message: 'Product updated successfully!', type: 'success' });
+    } catch (error) {
+      console.error('Error updating product:', error);
+      setToast({ isOpen: true, message: 'Error updating product: ' + error.message, type: 'error' });
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
+  const handleUpdateStock = async (productId, stockData) => {
+    setFormLoading(true);
+    try {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/products/${productId}/stock`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+        },
+        body: JSON.stringify(stockData)
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to update stock');
+      }
+
+      await fetchProducts(true); // Force refresh products list
+      setShowStockModal(false);
+      setSelectedProduct(null);
+      setToast({ isOpen: true, message: 'Stock updated successfully!', type: 'success' });
+    } catch (error) {
+      console.error('Error updating stock:', error);
+      setToast({ isOpen: true, message: 'Error updating stock: ' + error.message, type: 'error' });
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
+  const handleDeleteProduct = (productId) => {
+    const product = products.find(p => p.id === productId);
+    setProductToDelete(product);
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDeleteProduct = async () => {
+    if (!productToDelete) return;
+
+    setDeleteLoading(true);
+    try {
+      const { error } = await deleteProduct(productToDelete.id);
+      if (error) throw error;
+
+      await fetchProducts(true); // Force refresh products list
+      setShowDeleteConfirm(false);
+      setProductToDelete(null);
+      setToast({ isOpen: true, message: 'Product deleted successfully!', type: 'success' });
+    } catch (error) {
+      console.error('Error deleting product:', error);
+      setToast({ isOpen: true, message: 'Error deleting product: ' + error.message, type: 'error' });
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
 
   return h(AppLayout, { currentPath: "/inventory" },
-    h(InventoryContent)
+    h(InventoryContent, {
+      products,
+      loading,
+      searchTerm,
+      setSearchTerm,
+      selectedCategory,
+      setSelectedCategory,
+      currentProducts,
+      categories,
+      currentPage,
+      setCurrentPage,
+      totalPages,
+      startIndex,
+      endIndex,
+      filteredProducts,
+      setSelectedProduct,
+      setShowProductForm,
+      setShowStockModal,
+      handleDeleteProduct
+    }),
+
+    // Modals
+    h(ProductForm, {
+      isOpen: showProductForm,
+      onClose: () => {
+        setShowProductForm(false);
+        setSelectedProduct(null);
+      },
+      product: selectedProduct,
+      onSubmit: selectedProduct ? handleUpdateProduct : handleCreateProduct,
+      loading: formLoading
+    }),
+
+    h(StockUpdateModal, {
+      isOpen: showStockModal,
+      onClose: () => {
+        setShowStockModal(false);
+        setSelectedProduct(null);
+      },
+      product: selectedProduct,
+      onSubmit: handleUpdateStock,
+      loading: formLoading
+    }),
+
+    h(ConfirmModal, {
+      isOpen: showDeleteConfirm,
+      onClose: () => {
+        setShowDeleteConfirm(false);
+        setProductToDelete(null);
+      },
+      onConfirm: confirmDeleteProduct,
+      title: "Delete Product",
+      message: productToDelete ? `Are you sure you want to delete "${productToDelete.name}"? This action cannot be undone.` : "",
+      confirmText: "Delete",
+      cancelText: "Cancel",
+      variant: "danger",
+      loading: deleteLoading
+    }),
+
+    h(Toast, {
+      isOpen: toast.isOpen,
+      onClose: () => setToast({ ...toast, isOpen: false }),
+      message: toast.message,
+      type: toast.type
+    })
   );
 };
 

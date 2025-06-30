@@ -56,7 +56,7 @@ const Modal = ({
         className: `relative w-full ${sizeClasses[size]} transform overflow-hidden rounded-2xl bg-white shadow-xl transition-all ${className}`,
         onClick: (e) => e.stopPropagation()
       },
-        (title || showCloseButton) && h('div', { className: "flex items-center justify-between p-6 border-b border-gray-200" },
+        (title || showCloseButton) && h('div', { className: "flex items-center justify-between px-6 py-4 border-b border-gray-200" },
           title && h('h3', { className: "text-lg font-medium leading-6 text-gray-900" }, title),
           showCloseButton && h('button', {
             type: "button",

@@ -31,6 +31,9 @@ const LoginPage = () => {
       const { error } = await signIn(formData.email, formData.password);
       if (error) {
         setError(error.message || 'Login failed');
+      } else {
+        // Redirect to POS page after successful login
+        window.location.href = '/pos';
       }
     } catch (err) {
       setError('An unexpected error occurred');
@@ -39,14 +42,17 @@ const LoginPage = () => {
     }
   };
 
-  const handleDemoLogin = async () => {
+  const handleDemoLogin = async (email, password) => {
     setError('');
     setIsLoading(true);
 
     try {
-      const { error } = await signIn('admin@pos.com', 'admin123');
+      const { error } = await signIn(email, password);
       if (error) {
         setError(error.message || 'Demo login failed');
+      } else {
+        // Redirect to POS page after successful login
+        window.location.href = '/pos';
       }
     } catch (err) {
       setError('An unexpected error occurred');
@@ -120,21 +126,29 @@ const LoginPage = () => {
             )
           ),
 
-          h('div', { className: "mt-6" },
+          h('div', { className: "mt-6 space-y-3" },
             h(Button, {
               variant: "outline",
               fullWidth: true,
-              onClick: handleDemoLogin,
+              onClick: () => handleDemoLogin('admin@pos.com', 'admin123'),
               disabled: isLoading
-            }, "Demo Login (admin@pos.com)")
+            }, "Demo Login (Admin)"),
+            h(Button, {
+              variant: "outline",
+              fullWidth: true,
+              onClick: () => handleDemoLogin('cashier@pos.com', 'cashier123'),
+              disabled: isLoading
+            }, "Demo Login (Cashier)")
           )
         ),
 
         h('div', { className: "mt-6 text-center" },
-          h('div', { className: "text-sm text-gray-600" },
-            h('p', null, "Demo Credentials:"),
-            h('p', null, "Email: admin@pos.com"),
-            h('p', null, "Password: admin123")
+          h('div', { className: "text-sm text-gray-600 space-y-2" },
+            h('p', { className: "font-medium" }, "Demo Credentials:"),
+            h('div', { className: "space-y-1" },
+              h('p', null, "Admin: admin@pos.com / admin123"),
+              h('p', null, "Cashier: cashier@pos.com / cashier123")
+            )
           )
         )
       )

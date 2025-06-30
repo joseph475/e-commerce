@@ -2,6 +2,7 @@ import { h, createContext } from 'preact';
 import { useState, useContext } from 'preact/hooks';
 import ResponsiveLayout from './ResponsiveLayout';
 import Navigation from './Navigation';
+import Header from './Header';
 
 // Create context for sidebar state
 const SidebarContext = createContext();
@@ -37,11 +38,13 @@ const AppLayout = ({ children, currentPath }) => {
         <ResponsiveLayout
           mobileComponent={
             <div className="pb-16"> {/* Add padding for mobile bottom nav */}
+              <Header />
               {children}
             </div>
           }
           desktopComponent={
             <DesktopLayoutWithSidebar>
+              <Header />
               {children}
             </DesktopLayoutWithSidebar>
           }
