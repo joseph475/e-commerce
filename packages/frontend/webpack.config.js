@@ -74,7 +74,7 @@ module.exports = (env, argv) => {
             globOptions: {
               ignore: ['**/index.html']
             },
-            noErrorOnMissing: true
+            noErrorOnMissing: false
           },
           {
             from: 'src/_redirects',
