@@ -92,6 +92,38 @@ module.exports = (env, argv) => {
             
             const distPath = path.resolve(__dirname, 'dist');
             
+            // Create icons directory
+            const iconsPath = path.join(distPath, 'icons');
+            if (!fs.existsSync(iconsPath)) {
+              fs.mkdirSync(iconsPath, { recursive: true });
+            }
+            
+            // Create a simple SVG icon
+            const svgIcon = `<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+              <rect width="512" height="512" fill="#3b82f6" rx="64"/>
+              <g fill="white">
+                <rect x="96" y="160" width="320" height="240" rx="16" fill="white"/>
+                <rect x="112" y="176" width="288" height="80" rx="8" fill="#3b82f6"/>
+                <rect x="128" y="192" width="256" height="48" rx="4" fill="white"/>
+                <text x="256" y="224" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#3b82f6">POS</text>
+                <circle cx="144" cy="296" r="16" fill="#e5e7eb"/>
+                <circle cx="192" cy="296" r="16" fill="#e5e7eb"/>
+                <circle cx="240" cy="296" r="16" fill="#e5e7eb"/>
+                <circle cx="288" cy="296" r="16" fill="#e5e7eb"/>
+                <circle cx="336" cy="296" r="16" fill="#e5e7eb"/>
+                <circle cx="144" cy="336" r="16" fill="#e5e7eb"/>
+                <circle cx="192" cy="336" r="16" fill="#e5e7eb"/>
+                <circle cx="240" cy="336" r="16" fill="#e5e7eb"/>
+                <circle cx="288" cy="336" r="16" fill="#e5e7eb"/>
+                <circle cx="336" cy="336" r="16" fill="#e5e7eb"/>
+                <rect x="112" y="360" width="288" height="24" rx="4" fill="#9ca3af"/>
+                <rect x="120" y="364" width="16" height="16" rx="2" fill="#6b7280"/>
+              </g>
+            </svg>`;
+            
+            fs.writeFileSync(path.join(iconsPath, 'icon.svg'), svgIcon);
+            console.log('✅ Created icon.svg');
+            
             // Create manifest.json
             const manifest = {
               "name": "POS - Point of Sale System",
@@ -112,16 +144,10 @@ module.exports = (env, argv) => {
                   "purpose": "maskable any"
                 },
                 {
-                  "src": "/icons/icon-192x192.png",
-                  "sizes": "192x192",
-                  "type": "image/png",
-                  "purpose": "maskable any"
-                },
-                {
-                  "src": "/icons/icon-512x512.png",
-                  "sizes": "512x512",
-                  "type": "image/png",
-                  "purpose": "maskable any"
+                  "src": "/favicon.ico",
+                  "sizes": "32x32",
+                  "type": "image/x-icon",
+                  "purpose": "any"
                 }
               ]
             };

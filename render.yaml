@@ -12,26 +12,26 @@ services:
       - key: PORT
         sync: false
     
-  # Frontend Option A: Static Site (Recommended)
-  - type: web
-    name: pos-frontend-static
-    env: static
-    buildCommand: cd packages/frontend && npm install && npm run build
-    staticPublishPath: packages/frontend/dist
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /index.html
-  
-  # Frontend Option B: Web Service (Alternative - comment out Option A if using this)
+  # Frontend Option A: Static Site (Not suitable for PWA - commented out)
   # - type: web
-  #   name: pos-frontend-web
-  #   env: node
-  #   plan: starter
+  #   name: pos-frontend-static
+  #   env: static
   #   buildCommand: cd packages/frontend && npm install && npm run build
-  #   startCommand: cd packages/frontend && npm start
-  #   envVars:
-  #     - key: NODE_ENV
-  #       value: production
-  #     - key: PORT
-  #       sync: false
+  #   staticPublishPath: packages/frontend/dist
+  #   routes:
+  #     - type: rewrite
+  #       source: /*
+  #       destination: /index.html
+  
+  # Frontend Option B: Web Service (Required for PWA support)
+  - type: web
+    name: pos-frontend-web
+    env: node
+    plan: starter
+    buildCommand: cd packages/frontend && npm install && npm run build && ls -la dist/ && echo "=== Checking PWA files ===" && ls -la dist/manifest.json dist/sw.js dist/offline.html || echo "PWA files missing"
+    startCommand: cd packages/frontend && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        sync: false
