@@ -9,12 +9,20 @@ import { DataProvider } from '../contexts/DataContext';
 // Components
 import ProtectedRoute from './auth/ProtectedRoute';
 import RoleProtectedRoute from './auth/RoleProtectedRoute';
+import InstallPrompt from './pwa/InstallPrompt';
 import Dashboard from '../pages/Dashboard';
 import POSPage from '../pages/POSPage';
 import InventoryPage from '../pages/InventoryPage';
 import SalesPage from '../pages/SalesPage';
 import ReportsPage from '../pages/ReportsPage';
 import UserManagementPage from '../pages/UserManagementPage';
+
+// PWA utilities
+import { 
+  registerServiceWorker, 
+  setupOfflineDetection, 
+  setupInstallPrompt 
+} from '../utils/pwa';
 
 const AppRouter = () => {
   return (
@@ -48,11 +56,19 @@ const AppRouter = () => {
 };
 
 const App = () => {
+  useEffect(() => {
+    // Initialize PWA features
+    registerServiceWorker();
+    setupOfflineDetection();
+    setupInstallPrompt();
+  }, []);
+
   return (
     <AuthProvider>
       <DataProvider>
         <div className="min-h-screen">
           <AppRouter />
+          <InstallPrompt />
         </div>
       </DataProvider>
     </AuthProvider>

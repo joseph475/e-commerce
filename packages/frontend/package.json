@@ -9,11 +9,12 @@
   "scripts": {
     "start": "node server.js",
     "dev": "webpack serve --mode development --open",
-    "build": "npm run clean && webpack --mode production",
-    "build:render": "webpack --mode production",
+    "build": "npm run clean && npm run generate-icons && webpack --mode production",
+    "build:render": "npm run generate-icons && webpack --mode production",
     "clean": "rimraf dist",
     "clean:fallback": "rm -rf dist || rmdir /s dist || echo 'dist directory cleaned or did not exist'",
     "preview": "npm run build && npm start",
+    "generate-icons": "node scripts/generate-icons.js",
     "lint": "echo \"Add linting here\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -54,6 +55,7 @@
     "webpack-cli": "^6.0.1"
   },
   "devDependencies": {
+    "sharp": "^0.34.2",
     "webpack-dev-server": "^5.2.1"
   }
 }
